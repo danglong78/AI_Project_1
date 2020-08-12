@@ -223,11 +223,10 @@ class Map:
         a,b,c,d=self.p.row-2 if self.p.row-2>=0 else 0,self.p.row+3 if self.p.row+3<=self.h else self.h,self.p.col-2 if self.p.col-2>=0 else 0,self.p.col+3 if self.p.col+3<=self.w else self.w
         temp=[(x,y) for x in range(a,b) for y in range(c,d)]
         for i in temp:
-                if i in self.list_wall:
-                    self.list_wall.pop(i).st()
+              self.list_wall.pop(i).st()
                     
     def show_all(self):
-        for i in self.list_wall:
+        for i in self.list_wall.values():
             i.st()
     def move(self,path):
         if (type(path)==list):
