@@ -86,20 +86,22 @@ class Pen(Turtle):
     def draw_outline(self,h,w):
         x0= -((w//2)+1)*square
         y0=(h//2 + 1)*square
+        outline_stamp=[]
         for i in range(w+2):
             self.goto(x0+i*square,y0)
-            self.stamp()
+            outline_stamp+=[self.stamp()]
         for i in range(1,h+2):
             self.goto(x0+(w+1)*square,y0-i*square)
-            self.stamp()
+            outline_stamp+=[self.stamp()]
         for i in range(w+1):
             self.goto(x0+i*square,y0-(h+1)*square)
-            self.stamp()
+            outline_stamp+=[self.stamp()]
         for i in range(1,h+1):
             self.goto(x0,y0-i*square)
-            self.stamp()
+            outline_stamp+=[self.stamp()]
+        return outline_stamp
     def draw_map(self,map,h,w):
-        self.draw_outline(h,w)
+        outline_stamp=self.draw_outline(h,w)
         x=-((w//2)+1)*square+square
         y=(h//2 + 1)*square-square
         food=[]
@@ -115,7 +117,7 @@ class Pen(Turtle):
    
                 else:
                     continue
-        return x,y,list_wall
+        return x,y,list_wall,outline_stamp
 
 
 
@@ -198,8 +200,8 @@ class Food(Turtle):
 class Map:
     def __init__(self, filename):
         self.map,self.food,monster,pacman,self.h,self.w=graphic_loadmap(filename)
-        a=Pen(wall_shape)
-        x0,y0,self.list_wall=a.draw_map(self.map,self.h,self.w)
+        self.outline=Pen(wall_shape)
+        x0,y0,self.list_wall,self.outline_stamp=self.outline.draw_map(self.map,self.h,self.w)
         self.p=Player(player_shape,pacman[0],pacman[1])
         self.m=[Player(monster_shape[i%2],monster[i][0],monster[i][1]) for i in range(len(monster))]
         self.f=[Food(food_shape[i%5],win_effect,self.food[i][0],self.food[i][1])for i in range(len(self.food))]
@@ -212,6 +214,7 @@ class Map:
         self.p.start(x0+pacman[1]*square,y0-pacman[0]*square)
         self.p.st()
         self.eaten=0
+        self.score=0
     def eat_food(self):
         list_eaten=np.argwhere((self.food==np.array([self.p.row,self.p.col])).prod(axis=1)==1)
         if list_eaten.size!=0:
@@ -220,6 +223,7 @@ class Map:
             self.food[list_eaten.item(0)]=[-1,-1]
             self.p.st()
             self.eaten+=1
+            self.score+=20
 
     def is_beat(self):
         monster=[(i.row,i.col) for i in self.m]
@@ -241,19 +245,18 @@ class Map:
     def hide_all(self):
         for i in self.list_wall.values():
             i.ht()
-    def move(self,path):
-        if (type(path)==list):
-            for i in path:
-                self.p.move(i)
-                self.eat_food()
+
 
     def level1_2(self,path):
         if (type(path)==list):
             for i in path:
                 self.p.move(i)
+                self.score-=1
                 self.eat_food()
+            return True
         else:
             self.p.lose(lose_effect)
+            return False
 
     def level3(self,path_pacman,path_monster):
         self.hide_all()
@@ -261,13 +264,14 @@ class Map:
         if (type(path_pacman)==list):
             for i in range(len(path_pacman)):
                 self.p.move(path_pacman[i])
+                self.score-=1
                 self.eat_food()
                 if  self.eaten==len(self.f):
-                    return
+                    return True
                 for j in range(len(self.m)):
                     self.m[j].move(path_monster[j][i])
                 if self.is_beat():
-                    break
+                    return False
                 self.explore()
 
         else:
@@ -275,3 +279,20 @@ class Map:
                 self.p.shape(self.p.s[i][2])
                 sleep(0.25)
             self.p.lose(lose_effect)
+            return False
+    def print_result(self,isWin):
+        self.outline.clearstamps(len(self.outline_stamp))
+        self.hide_all()
+        self.p.ht()
+        self.outline.ht()
+        output=""
+        if isWin:
+            output="YOU WIN"
+        else:
+            output="YOU LOSE"
+        penup()
+        setpos(-50,50)
+        color("yellow")
+        write(output,align="center" ,font=("STCaiyun",60,"normal"))
+        setpos(-50,0)
+        write("SCORE: "+str(self.score),align="center" ,font=("Arial",40,"normal"))
