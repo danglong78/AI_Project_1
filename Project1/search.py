@@ -34,7 +34,7 @@ def Take_Prior(element):
 # In[32]:
 
 
-def Lv12_A_Star(path):
+def Lv12_A_Star(path): # Tìm theo A* Search
     exp_list=[]
     frontier=[]
     son=[]
@@ -63,19 +63,19 @@ def Lv12_A_Star(path):
             if arr[i]!=0 and arr[i]!=2:
                 check=False
             if check:
-                for z in exp_list:
+                for z in exp_list: #kiểm tra node đã có trong explored chưa
                     if i==z[0]:
                         check=False
                         break
             if check :
                 for z in frontier:
-                    if int(i)==z[0]:
+                    if int(i)==z[0]: # nếu đã có trong frontier thì cập nhật
                         Prior= lv1_2_heuristic(i,food,w,h)+cur[2]-lv1_2_heuristic(cur[0],food,w,h)+1
                         if Prior<z[2]:
                             z=[int(i),cur[0],Prior]
                         check=False
                         break
-            if check :
+            if check : # nếu chưa có trong frontier
                 Prior= lv1_2_heuristic(i,food,w,h)+cur[2]-lv1_2_heuristic(cur[0],food,w,h)+1
                 frontier.append([i,cur[0],Prior])
         frontier.pop(0)
@@ -96,15 +96,6 @@ def Lv12_A_Star(path):
     for i in re_path:
         re_path_2d.append([i//w,i%w])
     return re_path_2d
-
-
-# In[33]:
-
-
-
-
-# In[ ]:
-
 
 
 

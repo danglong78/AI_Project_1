@@ -1,5 +1,6 @@
 import numpy as np
 
+#Hàm  load map
 def loadmap_lv34(pathh):
     map_game=[]
     path=[] #[axis_x,axis_y]
@@ -98,7 +99,7 @@ def ghost_next_step(maze,ghost_pos,cur_pos,h,w):
     return can_move[np.random.randint(len(can_move))]
 
 
-# ham sear dung trong level 3 4 (BFS)
+# ham searh dung trong level 3 4 (BFS)
 def next_stepp(maze,cur_pos,h,w):
     result=[]
     for i,z in zip([cur_pos[0]-1,cur_pos[0],cur_pos[0],cur_pos[0]+1],[cur_pos[1],cur_pos[1]-1,cur_pos[1]+1,cur_pos[1]]):
