@@ -138,27 +138,27 @@ class Player(Turtle):
         self.st()
     def down(self):
         self.seth(270)
-        for i in range(6):
+        for i in range(4):
             self.shape(self.s[0][i%2])
-            self.fd(4)
+            self.fd(6)
         self.shape(self.s[0][2])
     def up(self):
         self.seth(90)
-        for i in range(6):
+        for i in range(4):
             self.shape(self.s[1][i%2])
-            self.fd(4)
+            self.fd(6)
         self.shape(self.s[1][2])
     def right(self):
         self.seth(0)
-        for i in range(6):
+        for i in range(4):
             self.shape(self.s[2][i%2])
-            self.fd(4)
+            self.fd(6)
         self.shape(self.s[2][2])
     def left(self):
         self.seth(180)
-        for i in range(6):
+        for i in range(4):
             self.shape(self.s[3][i%2])
-            self.fd(4)
+            self.fd(6)
         self.shape(self.s[3][2])
     def move(self,index):
         if (self.row==index[0] and self.col>index[1]):
@@ -229,9 +229,9 @@ class Map:
         monster=[(i.row,i.col) for i in self.m]
         list_beaten=np.argwhere((monster==np.array([self.p.row,self.p.col])).prod(axis=1)==1)
         if list_beaten.size!=0:
-           self.m[list_beaten.item()].ht()
+           self.m[list_beaten.item(0)].ht()
            self.p.lose(lose_effect)
-           self.m[list_beaten.item()].st()
+           self.m[list_beaten.item(0)].st()
            return True
         return False
 
@@ -240,7 +240,7 @@ class Map:
         temp=[(x,y) for x in range(a,b) for y in range(c,d)]
         for i in temp:
             if i in self.list_wall:
-                self.list_wall.pop(i).st()
+                self.list_wall[i].st()
                     
     def hide_all(self):
         for i in self.list_wall.values():
@@ -258,7 +258,7 @@ class Map:
             self.p.lose(lose_effect)
             return False
 
-    def level3(self,path_pacman,path_monster):
+    def level3_4_hide(self,path_pacman,path_monster):
         self.hide_all()
         self.explore()
         if (type(path_pacman)==list):
@@ -273,13 +273,21 @@ class Map:
                 if self.is_beat():
                     return False
                 self.explore()
-
-        else:
-            for i in range(4):
-                self.p.shape(self.p.s[i][2])
-                sleep(0.25)
-            self.p.lose(lose_effect)
-            return False
+    def level3_4_show(self,path_pacman,path_monster):
+ 
+        if (type(path_pacman)==list):
+            for i in range(len(path_pacman)):
+                self.p.move(path_pacman[i])
+                if self.is_beat():
+                    return False
+                self.score-=1
+                self.eat_food()
+                if  self.eaten==len(self.f):
+                    return True
+                for j in range(len(self.m)):
+                    self.m[j].move(path_monster[j][i])
+                if self.is_beat():
+                    return False
     def print_result(self,isWin):
         self.outline.clearstamps(len(self.outline_stamp))
         self.hide_all()
