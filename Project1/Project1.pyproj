@@ -22,6 +22,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="graph.py" />
+    <Compile Include="level3_4.py" />
     <Compile Include="main.py" />
     <Compile Include="search.py" />
   </ItemGroup>

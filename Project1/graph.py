@@ -105,7 +105,7 @@ class Pen(Turtle):
         food=[]
         monster=[]
         list_wall={}
-        self.ht()
+        self.st()
         for i in range(h):
             for j in range(w):
                 if map[i][j]==1:
@@ -134,30 +134,29 @@ class Player(Turtle):
         self.shape(self.s[0][2])
         self.goto(x,y)
         self.st()
-        self.speed(4)
     def down(self):
         self.seth(270)
-        for i in range(12):
+        for i in range(6):
             self.shape(self.s[0][i%2])
-            self.fd(2)
+            self.fd(4)
         self.shape(self.s[0][2])
     def up(self):
         self.seth(90)
-        for i in range(12):
+        for i in range(6):
             self.shape(self.s[1][i%2])
-            self.fd(2)
+            self.fd(4)
         self.shape(self.s[1][2])
     def right(self):
         self.seth(0)
-        for i in range(12):
+        for i in range(6):
             self.shape(self.s[2][i%2])
-            self.fd(2)
+            self.fd(4)
         self.shape(self.s[2][2])
     def left(self):
         self.seth(180)
-        for i in range(12):
+        for i in range(6):
             self.shape(self.s[3][i%2])
-            self.fd(2)
+            self.fd(4)
         self.shape(self.s[3][2])
     def move(self,index):
         if (self.row==index[0] and self.col>index[1]):
@@ -169,11 +168,10 @@ class Player(Turtle):
         elif (self.row>index[0] and self.col==index[1]):
             self.up()
         self.row,self.col=index
-    def lose(self,s):
-        scr.delay(75)
+    def lose(self,s):  
         for i in range(len(s)):
                 self.shape(s[i])
-        scr.delay(0)
+                sleep(0.01)
         self.ht()
 class Food(Turtle):
     def __init__(self,s,effect,x,y):
@@ -188,13 +186,13 @@ class Food(Turtle):
     def start(self,x,y):
         self.shape(self.s)
         self.goto(x,y)
+        self.st()
         self.speed(5)   
     def win_effect(self,index):
-        scr.delay(25)
         for _ in range(2):
             for i in self.effect[index%2]:
                 self.shape(i)
-        scr.delay(0)
+                sleep(0.01)
         self.ht()
 
 class Map:
@@ -213,12 +211,26 @@ class Map:
             self.list_wall[(self.food[i][0],self.food[i][1])]=self.f[i]
         self.p.start(x0+pacman[1]*square,y0-pacman[0]*square)
         self.p.st()
+        self.eaten=0
     def eat_food(self):
         list_eaten=np.argwhere((self.food==np.array([self.p.row,self.p.col])).prod(axis=1)==1)
         if list_eaten.size!=0:
             self.p.ht()
-            self.f[list_eaten.item()].win_effect(np.random.randint(1,2))
+            self.f[list_eaten.item(0)].win_effect(np.random.randint(1,2))
+            self.food[list_eaten.item(0)]=[-1,-1]
             self.p.st()
+            self.eaten+=1
+
+    def is_beat(self):
+        monster=[(i.row,i.col) for i in self.m]
+        list_beaten=np.argwhere((monster==np.array([self.p.row,self.p.col])).prod(axis=1)==1)
+        if list_beaten.size!=0:
+           self.m[list_beaten.item()].ht()
+           self.p.lose(lose_effect)
+           self.m[list_beaten.item()].st()
+           return True
+        return False
+
     def explore(self):
         a,b,c,d=self.p.row-2 if self.p.row-2>=0 else 0,self.p.row+3 if self.p.row+3<=self.h else self.h,self.p.col-2 if self.p.col-2>=0 else 0,self.p.col+3 if self.p.col+3<=self.w else self.w
         temp=[(x,y) for x in range(a,b) for y in range(c,d)]
@@ -226,9 +238,9 @@ class Map:
             if i in self.list_wall:
                 self.list_wall.pop(i).st()
                     
-    def show_all(self):
+    def hide_all(self):
         for i in self.list_wall.values():
-            i.st()
+            i.ht()
     def move(self,path):
         if (type(path)==list):
             for i in path:
@@ -236,28 +248,30 @@ class Map:
                 self.eat_food()
 
     def level1_2(self,path):
-        self.show_all()
         if (type(path)==list):
             for i in path:
                 self.p.move(i)
                 self.eat_food()
         else:
-            scr.delay(100)
-            for i in range(4):
-                self.p.shape(self.p.s[i][2])
-            scr.delay(0)
             self.p.lose(lose_effect)
 
-    def level3(self,path):
+    def level3(self,path_pacman,path_monster):
+        self.hide_all()
         self.explore()
-        if (type(path)==list):
-            for i in path:
-                self.p.move(i)
-                self.explore()
+        if (type(path_pacman)==list):
+            for i in range(len(path_pacman)):
+                self.p.move(path_pacman[i])
                 self.eat_food()
+                if  self.eaten==len(self.f):
+                    return
+                for j in range(len(self.m)):
+                    self.m[j].move(path_monster[j][i])
+                if self.is_beat():
+                    break
+                self.explore()
+
         else:
-            scr.delay(100)
             for i in range(4):
                 self.p.shape(self.p.s[i][2])
-            scr.delay(0)
+                sleep(0.25)
             self.p.lose(lose_effect)
