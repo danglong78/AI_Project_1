@@ -58,12 +58,12 @@ def where2go(maze,cur_pos,re_pos,h,w):
             if not(is_danger(maze,[i,z],h,w)):
                 can_move.append([i,z])
     if(len(can_move)==0):
-        return re_pos
+        return [re_pos,0]
     else:
         can_move.sort(key = lambda x: count_expend(maze,x,h,w))
     if count_expend(maze,can_move[-1],h,w)==0:
-        return can_move[np.random.randint(len(can_move))]
-    return can_move[-1]
+        return [can_move[np.random.randint(len(can_move))],0]
+    return [can_move[-1],1]
 
 
 
@@ -83,7 +83,7 @@ def un_explored_all(pm_maze,h,w):
 
 
 def is_danger(maze,cur_pos,h,w):
-    for i,z in zip([cur_pos[0]-1,cur_pos[0],cur_pos[0],cur_pos[0]+1],[cur_pos[1],cur_pos[1]-1,cur_pos[1]+1,cur_pos[1]]):
+    for i,z in zip([cur_pos[0],cur_pos[0]-1,cur_pos[0],cur_pos[0],cur_pos[0]+1],[cur_pos[1],cur_pos[1],cur_pos[1]-1,cur_pos[1]+1,cur_pos[1]]):
         if (i<h) and (i>=0) and (z<w) and (z>=0):
             if maze[i][z]>=3:
                 return True
@@ -98,6 +98,90 @@ def ghost_next_step(maze,ghost_pos,cur_pos,h,w):
         if(i>=0) and (i<h) and (z>=0) and (z<w) and (maze[i][z]!=1):
             can_move.append([i,z])
     return can_move[np.random.randint(len(can_move))]
+
+# ham sear dung trong explore map lv3 va 4
+def next_stepp_ex(maze,cur_pos,h,w):
+    result=[]
+    for i,z in zip([cur_pos[0]-1,cur_pos[0],cur_pos[0],cur_pos[0]+1],[cur_pos[1],cur_pos[1]-1,cur_pos[1]+1,cur_pos[1]]):
+        if (i>=0) and (i<h) and (z>=0) and (z<w) and not(is_danger(maze,[i,z],h,w)):
+            if maze[i][z]==0 or maze[i][z]==2:
+               result.append([i,z])
+    return result
+
+def explore_search(maze,pos,des,h,w):
+    exp_list=[]
+    frontier=[]
+    comp=False
+    frontier.append([pos.copy(),pos.copy()])
+    while(len(frontier)>0):
+        cur=frontier[0]
+        exp_list.append([cur[0].copy(),cur[1].copy()])
+        nex_step=next_stepp_ex(maze,cur[0],h,w)
+        for i in nex_step:
+            if i==des :
+                exp_list.append([des,cur[0]])
+                frontier.pop(0)
+                comp=True
+                break
+        if comp :
+            break
+        for i in nex_step:
+            check=True
+            for z in exp_list:
+                if i==z[0]:
+                    check=False
+                    break
+            if check :
+                for z in frontier:
+                    if i==z[0]:
+                        check=False
+                        break
+            if check :
+                frontier.append([i.copy(),cur[0].copy()])
+        frontier.pop(0)
+    if comp==False:
+        return []
+    re_path=[]
+    cur=exp_list[-1].copy()
+    while(cur[0]!=pos):
+        re_path.append(cur[0].copy())
+        for i in exp_list:
+            if i[0]==cur[1]:
+                cur=i.copy()
+                break
+    #re_path.append(pos.copy())
+    re_path.reverse()
+    return re_path
+
+def explore_path(maze,cur_pos,h,w,re_pos):
+    count_unex=0
+    list1=[]
+    for i in range(h):
+        for z in range(w):
+            if(maze[i][z]!=-1) and (maze[i][z]!=1) and (maze[i][z]<3) and [i,z]!=re_pos:
+                count_unex=0
+                for x in range(-2,3):
+                    for y in range(-2,3):
+                        if (i+x)>=0 and (i+x)<h and (z+y)>=0 and (z+y)<w:
+                            if(maze[i+x][z+y]>=3):
+                                break
+                            if(maze[i+x][z+y]==-1):
+                                count_unex=count_unex+1
+                if(count_unex>0):
+                    list1.append([i,z,count_unex])
+    if(len(list1)==0):
+        return []
+    list1.sort(key = lambda x: x[2])
+    list1.reverse()
+    path=[]
+    for i in range(len(list1)):
+        z=np.random.randint(len(list1))
+        temp_path = explore_search(maze,cur_pos,[list1[z][0],list1[z][1]],h,w).copy()
+        if (len(temp_path)>0):
+            path=temp_path.copy()
+            break
+    return path
+
 
 
 # ham searh dung trong level 3 4 (BFS)
@@ -178,6 +262,7 @@ def lv3_play(maze,start,ghost_count,ghost_pos,h,w):
     cur_pos=start.copy()
     # duong di tam thoi cua pacman
     path=[]
+    path1=[]
     # duong di cua ghost
     ghost_path=[]
     cur_ghost_pos=ghost_pos.copy()
@@ -207,14 +292,15 @@ def lv3_play(maze,start,ghost_count,ghost_pos,h,w):
         # khi da co san duong da tim den food
         if len(path)>0 :
             # kiem tra xem vi tri tiep theo co la moster - neu la moster se xoa path dang di va den phan sau
-            if pm_maze[path[0][0]][path[0][1]]==3 or pm_maze[path[0][0]][path[0][1]]==5:
+            if pm_maze[path[0][0]][path[0][1]]>=3:
                 path.clear()
-            # neu step tiep theo an toan - kiem tra xem cac step lan can co moster khong. neu khong thi di thoi
+            # neu cac step lan can cua next step co moster - thu doi xem moster di chuyen nhu nao
+           
             elif is_danger(maze,path[0],h,w):
                 pm_path.append(cur_pos.copy())
                 pm_tur=False
                 
-            # neu cac step lan can cua next step co moster - thu doi xem moster di chuyen nhu nao
+             # neu step tiep theo an toan - kiem tra xem cac step lan can co moster khong. neu khong thi di thoi
             else:
                 pm_path.append(path[0].copy())
                 cur_pos = path[0].copy()
@@ -237,6 +323,7 @@ def lv3_play(maze,start,ghost_count,ghost_pos,h,w):
                         path = temp_path.copy()
             # neu tim duoc duong di thi di thoi
             if len(path)>0:
+                path1.clear()
                 pm_path.append(path[0])
                 cur_pos = path[0].copy()
                 path.pop(0)
@@ -245,14 +332,41 @@ def lv3_play(maze,start,ghost_count,ghost_pos,h,w):
                 if(maze[cur_pos[0]][cur_pos[1]]==2):
                     maze[cur_pos[0]][cur_pos[1]]=0
                     count_food=count_food-1
+                    path.clear()
             # neu khong tim duoc duong den thuc an thi den o co heuristic cao nhat
             else:
-                re_pos=pm_path[-1].copy()
-                if(re_pos==cur_pos):
-                    re_pos=pm_path[len(pm_path)-2].copy()
-                next_step = where2go(pm_maze,cur_pos,re_pos,h,w)
-                pm_path.append(next_step.copy())
-                cur_pos = next_step.copy()
+                temp=[]
+                if(len(path1)>0):
+                    if pm_maze[path1[0][0]][path1[0][1]]>=3:
+                        temp=path1[-1].copy()
+                        path1.clear()
+                    elif is_danger(maze,path1[0],h,w):
+                        pm_path.append(cur_pos.copy())
+                        pm_tur=False
+                    else:
+                        pm_path.append(path1[0].copy())
+                        cur_pos = path1[0].copy()
+                        path1.pop(0)
+                        pm_tur=False
+
+                if (len(path1)==0) and pm_tur:
+                    re_pos=pm_path[-1].copy()
+                    if(re_pos==cur_pos):
+                        re_pos=pm_path[len(pm_path)-2].copy()
+                    [next_step,check] = where2go(pm_maze,cur_pos,re_pos,h,w)
+                    if check!=0:
+                        pm_path.append(next_step.copy())
+                        cur_pos = next_step.copy()
+                    else:
+                        temp_path= explore_path(pm_maze,cur_pos,h,w,temp)
+                        if(len(temp_path)>0):
+                            path1=temp_path.copy()
+                            pm_path.append(path1[0].copy())
+                            cur_pos = path1[0].copy()
+                            path1.pop(0)
+                        else:
+                            pm_path.append(next_step.copy())
+                            cur_pos = next_step.copy()
                 pm_tur=False
                 # neu vi tri den la thuc an
                 if(maze[cur_pos[0]][cur_pos[1]]==2):
@@ -315,14 +429,23 @@ def ghost_heuristic(maze,pm_pos,cur_pos,re_pos,h,w):
         return can_move[1]
     return can_move[0]
 
+def ghost_random(maze,cur_pos,h,w):
+    can_move=[]
+    for i,z in zip([cur_pos[0]-1,cur_pos[0],cur_pos[0],cur_pos[0]+1],[cur_pos[1],cur_pos[1]-1,cur_pos[1]+1,cur_pos[1]]):
+        if i>=0 and i<h and z>=0 and z<w and maze[i][z]!=1:
+            can_move.append([i,z])
+    return can_move[np.random.randint(len(can_move))]
+
 
 def lv4_play(maze,start,ghost_count,ghost_pos,h,w):
     count_food=0
+    ghost_tur=0
     # tinh so luong thuc an
     for i in range(h):
         for z in range(w):
             if maze[i][z]==2:
                 count_food=count_food+1
+    print(count_food)
     # ban do cua pacman
     pm_maze=[]
     for i in range(h):
@@ -353,7 +476,10 @@ def lv4_play(maze,start,ghost_count,ghost_pos,h,w):
                 
                 
     # vong lap tro choi dien ra
-    for turn in range(800):
+    for turn in range(1000):
+        for i,z in zip([cur_pos[0]-1,cur_pos[0],cur_pos[0],cur_pos[0]+1],[cur_pos[1],cur_pos[1]-1,cur_pos[1]+1,cur_pos[1]]):
+            if i>=0 and i<h and z>=0 and z<w and maze[i][z]>=3:
+                break
         if not(un_explored_all(pm_maze,h,w)) and len(food_pos_list)>0:
             break
             
@@ -367,12 +493,14 @@ def lv4_play(maze,start,ghost_count,ghost_pos,h,w):
         # khi da co san duong da tim den food
         if len(path)>0 :
             # kiem tra xem vi tri tiep theo co la moster - neu la moster se xoa path dang di va den phan sau
-            if pm_maze[path[0][0]][path[0][1]]>=3:
+            if pm_maze[path[0][0]][path[0][1]]>=3 or is_danger(pm_maze,path[0],h,w):
+                if path[-1] in food_pos_list:
+                    food_pos_list.remove(path[-1])
                 path.clear()
             # neu cac step lan can cua next step co moster - thu doi xem moster di chuyen nhu nao
-            elif is_danger(maze,path[0],h,w):
-                pm_path.append(cur_pos.copy())
-                pm_tur=False
+           # elif is_danger(maze,path[0],h,w):
+               # pm_path.append(cur_pos.copy())
+               # pm_tur=False
                 
             
             # neu step tiep theo an toan - kiem tra xem cac step lan can co moster khong. neu khong thi di thoi
@@ -383,18 +511,27 @@ def lv4_play(maze,start,ghost_count,ghost_pos,h,w):
                 pm_tur=False
                 # neu vi tri den la thuc an
                 if(maze[cur_pos[0]][cur_pos[1]]==2):
-                    maze[cur_pos[0]][cur_pos[1]]=0
+                    maze[cur_pos[0]][cur_pos[1]]=maze[cur_pos[0]][cur_pos[1]]-2
                     count_food=count_food-1
-                
+                    path.clear()
                           
         # khi dang chua co duong di den food moi hoac duong di den food chac chan bi nguy hiem
         if len(path)==0 and pm_tur:
+            path.clear()
+            print(food_pos_list)
             # tim duong di ngan nhat den cac food trong danh sach
-            for food in food_pos_list:
-                temp_path=lv3_4_search(pm_maze,cur_pos,food,h,w)
+            for a in range(len(food_pos_list)):
+                food=food_pos_list[np.random.randint(len(food_pos_list))]
+                temp_path=explore_search(pm_maze,cur_pos,food,h,w).copy()
                 if(len(temp_path)>0):
-                    if len(path)>len(temp_path) or len(path)==0:
                         path = temp_path.copy()
+                        break
+            if len(path)==0:
+                for food in food_pos_list:
+                    temp_path=explore_search(pm_maze,cur_pos,food,h,w).copy()
+                    if(len(temp_path)>0):
+                        path = temp_path.copy()
+                        break
             # neu tim duoc duong di thi di thoi
             if len(path)>0:
                 pm_path.append(path[0])
@@ -403,33 +540,59 @@ def lv4_play(maze,start,ghost_count,ghost_pos,h,w):
                 pm_tur=False
                 # neu vi tri den la thuc an
                 if(maze[cur_pos[0]][cur_pos[1]]==2):
-                    maze[cur_pos[0]][cur_pos[1]]=0
+                    maze[cur_pos[0]][cur_pos[1]]=maze[cur_pos[0]][cur_pos[1]]-2
                     count_food=count_food-1
+                    path.clear()
             # neu khong tim duoc duong den thuc an thi den o co heuristic cao nhat
             else:
-                re_pos=pm_path[-1].copy()
-                if(re_pos==cur_pos):
-                    re_pos=pm_path[len(pm_path)-2].copy()
-                next_step = where2go(pm_maze,cur_pos,re_pos,h,w)
-                pm_path.append(next_step.copy())
-                cur_pos = next_step.copy()
+                if (len(path)==0) and pm_tur:
+                    temp_path= explore_path(pm_maze,cur_pos,h,w,temp)
+                    if(len(temp_path)>0):
+                        path=temp_path.copy()
+                        pm_path.append(path[0].copy())
+                        cur_pos = path[0].copy()
+                        path.pop(0)
+                    else:
+                        re_pos=pm_path[len(pm_path)-2].copy()
+                        [next_step,check] = where2go(pm_maze,cur_pos,re_pos,h,w)
+                        pm_path.append(next_step.copy())
+                        cur_pos = next_step.copy()
                 pm_tur=False
                 # neu vi tri den la thuc an
                 if(maze[cur_pos[0]][cur_pos[1]]==2):
-                    maze[cur_pos[0]][cur_pos[1]]=0
+                    maze[cur_pos[0]][cur_pos[1]]=maze[cur_pos[0]][cur_pos[1]]-2
                     count_food=count_food-1
+                    path.clear()
             
         if count_food==0:
             break
         #--------------------------------------------#
         #        xu ly di chuyen cua moster          #
         #--------------------------------------------#
-        for i in range(ghost_count):
-            temp_pos = ghost_heuristic(maze,cur_pos,ghost_pos[i],ghost_path[i][-1],h,w).copy()
-            maze[ghost_pos[i][0]][ghost_pos[i][1]]=maze[ghost_pos[i][0]][ghost_pos[i][1]]-3
-            ghost_pos[i]=temp_pos.copy()
-            maze[ghost_pos[i][0]][ghost_pos[i][1]]=maze[ghost_pos[i][0]][ghost_pos[i][1]]+3
-            ghost_path[i].append(temp_pos.copy())
+        is_dead=False
+        if (ghost_tur%4)>0:
+            for i in range(ghost_count):
+                temp_pos = ghost_heuristic(maze,cur_pos,ghost_pos[i],ghost_path[i][-1],h,w).copy()
+                maze[ghost_pos[i][0]][ghost_pos[i][1]]=maze[ghost_pos[i][0]][ghost_pos[i][1]]-3
+                ghost_pos[i]=temp_pos.copy()
+                maze[ghost_pos[i][0]][ghost_pos[i][1]]=maze[ghost_pos[i][0]][ghost_pos[i][1]]+3
+                ghost_path[i].append(temp_pos.copy())
+                if(ghost_pos[i]==cur_pos):
+                    is_dead=True
+                    break
+        else:
+            for i in range(ghost_count):
+                temp_pos = ghost_random(maze,ghost_pos[i],h,w).copy()
+                maze[ghost_pos[i][0]][ghost_pos[i][1]]=maze[ghost_pos[i][0]][ghost_pos[i][1]]-3
+                ghost_pos[i]=temp_pos.copy()
+                maze[ghost_pos[i][0]][ghost_pos[i][1]]=maze[ghost_pos[i][0]][ghost_pos[i][1]]+3
+                ghost_path[i].append(temp_pos.copy())
+                if(ghost_pos[i]==cur_pos):
+                    is_dead=True
+                    break
+        if is_dead:
+            break
+        ghost_tur=ghost_tur+1
         #--------------------------------------------#
         #        cap nhat lai ban do cho pacman      #
         #--------------------------------------------#
@@ -447,7 +610,7 @@ def lv4_play(maze,start,ghost_count,ghost_pos,h,w):
         for i in range(h):
             for z in range(w):
                 temp=pm_maze[i][z]
-                if temp>=2 and ((temp-2)%3)==0:
+                if temp ==2:
                     food_pos_list.append([i,z])
     return[pm_path,ghost_path]
 

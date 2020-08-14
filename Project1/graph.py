@@ -241,7 +241,15 @@ class Map:
         for i in temp:
             if i in self.list_wall:
                 self.list_wall[i].st()
-                    
+                if type(self.list_wall[i])==Food:
+                    self.list_wall.pop(i)
+    def monster_visual(self):
+        a,b,c,d=self.p.row-2 if self.p.row-2>=0 else 0,self.p.row+3 if self.p.row+3<=self.h else self.h,self.p.col-2 if self.p.col-2>=0 else 0,self.p.col+3 if self.p.col+3<=self.w else self.w
+        temp=[(x,y) for x in range(a,b) for y in range(c,d)]
+        pos=[(i.row,i.col,i) for i in self.m]
+        for i in pos:
+            if i not in temp:
+                i[2].ht()
     def hide_all(self):
         for i in self.list_wall.values():
             i.ht()
