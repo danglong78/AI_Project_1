@@ -22,9 +22,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="graph.py" />
-    <Compile Include="level3_4.py" />
     <Compile Include="main.py" />
-    <Compile Include="search.py" />
+    <Compile Include="Propositional_Logic.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="15x20.txt" />
